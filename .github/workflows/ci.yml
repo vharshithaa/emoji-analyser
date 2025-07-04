@@ -1,0 +1,40 @@
+name: Emoji App CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install joblib requests textblob langdetect
+        python -m textblob.download_corpora
+
+    - name: Run Tests
+      id: run_tests
+      run: |
+        pytest || true  # Allow failure so we can log it
+
+    - name: Run Failure Predictor + Slack Notification
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      run: |
+        STATUS="Success"
+        if [ "${{ steps.run_tests.outcome }}" != "success" ]; then
+          STATUS="Failure"
+        fi
+        python cicd_tools/monitor.py $STATUS

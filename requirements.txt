@@ -1,2 +1,5 @@
-textblob
 pytest
+textblob
+langdetect
+joblib
+requests
